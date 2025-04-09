@@ -14,7 +14,10 @@ const conversationRelationSchema = new mongoose.Schema(
     lastMessage: {
       type: {
         message: String,
-        senderId: mongoose.Schema.Types.ObjectId,
+        senderId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
       },
     },
   },

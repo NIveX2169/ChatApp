@@ -39,7 +39,7 @@ export const getAllConversationsForUser = async (req, res) => {
     console.log("mongoUserId", mongoUserId);
     const conversations = await conversationModel
       .find({ participants: mongoUserId })
-      .populate("participants", "username email") // optional
+      .populate("lastMessage.senderId", "username email") // optional
       .sort({ updatedAt: -1 });
 
     res.status(200).json({ status: true, data: conversations });

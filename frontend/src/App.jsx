@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { connectSocket } from "./features/slices/socketSlice";
 import Login from "./pages/login";
 import { Menu, X, MessageSquare } from "lucide-react";
+import { getChatPreviews } from "./features/actions/previousChatActions";
 
 function App() {
   const dispatch = useDispatch();
@@ -16,11 +17,13 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const { isLoggedIn, userData } = useSelector((state) => state.auth);
+
   useEffect(() => {
     if (isLoggedIn) {
       dispatch(connectSocket());
+      dispatch(getChatPreviews(userData.id));
     }
-  }, []);
+  }, [isLoggedIn]);
 
   useEffect(() => {
     if (socket) {

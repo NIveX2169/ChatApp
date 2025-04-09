@@ -2,6 +2,37 @@
 
 import { useState } from "react";
 import SearchBar from "../SearchBar";
+import { useSelector } from "react-redux";
+const formatMessageDate = (dateStr) => {
+  const date = new Date(dateStr);
+  const now = new Date();
+
+  const isSameDay = (d1, d2) =>
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
+
+  const isYesterday = (d1, d2) => {
+    const yesterday = new Date(d2);
+    yesterday.setDate(d2.getDate() - 1);
+    return isSameDay(d1, yesterday);
+  };
+
+  const isThisWeek = (d1, d2) => {
+    const startOfWeek = new Date(d2);
+    startOfWeek.setDate(d2.getDate() - d2.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    return d1 >= startOfWeek && d1 < d2;
+  };
+
+  if (isSameDay(date, now)) return "Today";
+  if (isYesterday(date, now)) return "Yesterday";
+  if (isThisWeek(date, now)) {
+    return date.toLocaleDateString("en-US", { weekday: "long" });
+  }
+
+  return date.toLocaleDateString("en-US", { day: "numeric", month: "short" }); // like "6 Apr"
+};
 
 const Chatui = () => {
   // Sample data for chat users
@@ -64,6 +95,7 @@ const Chatui = () => {
 
   // Active filter state
   const [activeFilter, setActiveFilter] = useState("all");
+  const { previousChatPreview } = useSelector((state) => state.chatPreviews);
 
   return (
     <div className="w-full h-full  bg-white rounded-lg shadow-sm border border-gray-100">
@@ -112,44 +144,91 @@ const Chatui = () => {
       </div>
 
       {/* Chat List */}
-      <div className="overflow-y-auto min-h-[400px] max-h-[400px] border-4">
-        {chatUsers.map((user) => (
-          <div
-            key={user.id}
-            className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors"
-          >
-            {/* User Avatar with online indicator */}
-            <div className="relative">
-              <img
-                src={user.avatar || "/placeholder.svg"}
-                alt={user.name}
-                className="w-12 h-12 rounded-full object-cover"
-              />
-              {user.online && (
-                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+      {previousChatPreview && previousChatPreview.length > 0 ? (
+        <div className="overflow-y-auto min-h-[400px] max-h-[400px] border-4">
+          {previousChatPreview.map((user) => (
+            <div
+              key={user._id}
+              className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors"
+            >
+              {/* User Avatar with online indicator */}
+              <div className="relative">
+                <img
+                  src={user.avatar || "/placeholder.jpg"}
+                  alt={user?.participants?.[0].username}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                {user.online && (
+                  <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                )}
+              </div>
+
+              {/* User Info and Last Message */}
+              <div className="ml-3 flex-1 overflow-hidden">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold text-gray-800">
+                    {user?.participants?.[0].username}
+                  </h3>
+                  <span className="text-xs text-gray-500">
+                    {formatMessageDate(user.updatedAt)}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 truncate">
+                  {user.lastMessage.message}
+                </p>
+              </div>
+
+              {/* Unread Count */}
+              {(user?.unread || 2) > 0 && (
+                <div className="ml-2 bg-blue-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {user?.unread || 1}
+                </div>
               )}
             </div>
-
-            {/* User Info and Last Message */}
-            <div className="ml-3 flex-1 overflow-hidden">
-              <div className="flex justify-between items-center">
-                <h3 className="font-semibold text-gray-800">{user.name}</h3>
-                <span className="text-xs text-gray-500">{user.timestamp}</span>
+          ))}
+        </div>
+      ) : (
+        <div className="overflow-y-auto min-h-[400px] max-h-[400px] border-4">
+          {chatUsers.map((user) => (
+            <div
+              key={user.id}
+              className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors"
+            >
+              {/* User Avatar with online indicator */}
+              <div className="relative">
+                <img
+                  src={user.avatar || "/placeholder.svg"}
+                  alt={user.name}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                {user.online && (
+                  <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                )}
               </div>
-              <p className="text-sm text-gray-600 truncate">
-                {user.lastMessage}
-              </p>
+
+              {/* User Info and Last Message */}
+              <div className="ml-3 flex-1 overflow-hidden">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold text-gray-800">{user.name}</h3>
+                  <span className="text-xs text-gray-500">
+                    {user.timestamp}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 truncate">
+                  {user.lastMessage}
+                </p>
+              </div>
+
+              {/* Unread Count */}
+              {user.unread > 0 && (
+                <div className="ml-2 bg-blue-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {user.unread}
+                </div>
+              )}
             </div>
-
-            {/* Unread Count */}
-            {user.unread > 0 && (
-              <div className="ml-2 bg-blue-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                {user.unread}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Supporting Tags */}
       <div className="p-4 border-t border-gray-100">
